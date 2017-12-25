@@ -12,7 +12,7 @@ def main():
 			
 		print(ascii_snek)
 		
-		server.serverSocket.chatServer("localhost", 33333)
+		server.serverSocket.__init__()
 
 		# Do argument parsing here (eg. with argparse) and anything else
 		# you want your project to do.

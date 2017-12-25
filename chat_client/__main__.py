@@ -1,7 +1,7 @@
 import client.clientSocket
 
 def main():
-		client.clientSocket.chatClient("localhost", 33333)
+		client.clientSocket.chatClient()
 
 if __name__ == "__main__":
 		main()
