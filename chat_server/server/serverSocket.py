@@ -75,6 +75,14 @@ if __name__ == "__main__":
 	coro = loop.create_server(lambda: ChatServerProtocol(connections, users), args["addr"], args["port"])
 	server = loop.run_until_complete(coro)
 
+	ascii_snek = """\
+    --..,_                     _,.--.
+       `'.'.                .'`__ o  `;__.
+          '.'.            .'.'`  '---'`  `
+            '.`'--....--'`.'
+              `'--....--'`
+"""
+	print(ascii_snek)
 	print('Serving on {}:{}'.format(*server.sockets[0].getsockname()))
 	try:
 		loop.run_forever()
