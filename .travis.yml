@@ -1,0 +1,14 @@
+language: python
+python:
+  - "2.7"
+  - "3.6"
+# command to install dependencies
+install:
+ 
+# command to run tests
+script:
+  - python .chat_client/server.py&
+  - python .chat_client/client.py&
+  - sleep 5
+  - python .test.py
+  - pytest
