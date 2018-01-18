@@ -4,6 +4,6 @@ python:
 install:
  
 script:
-  - python ./chat_client/server.py&
+  - python ./chat_server/server.py&
   - sleep 1
-  - python .test.py
+  - python ./test.py
