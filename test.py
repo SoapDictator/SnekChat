@@ -40,14 +40,15 @@ class TestSnek(unittest.TestCase):
 		return client1, client2
 		
 	def after_test(self, clients):
-		try:
-			self.clients_disconnect(clients)
-			
-			for thread in threading.enumerate():
-				if thread._name != "MainThread":
-					thread.join()
-		except:
-			pass
+		for client in clients:
+			client.send(self.DISCONNECT_MESSAGE)
+			time.sleep(0.1)
+		
+		for thread in threading.enumerate():
+			if thread._name != "MainThread":
+				thread.join()
+		
+		time.sleep(0.1)
 	
 	#===================== util methods =====================
 	def make_client(self, args):
@@ -61,12 +62,7 @@ class TestSnek(unittest.TestCase):
 	def clients_login(self, clients):
 		for client in clients:
 			client.send(self.LOGIN_MESSAGE)
-		time.sleep(1)
-	
-	def clients_disconnect(self, clients):
-		for client in clients:
-			client.send(self.DISCONNECT_MESSAGE)
-		time.sleep(1)
+		time.sleep(0.1)
 	
 	def format_sent(self, client, message):
 		return "{}: {}".format(client.getUserName(), message)
@@ -75,7 +71,7 @@ class TestSnek(unittest.TestCase):
 		return "/w {} {}".format(client.getUserName(), message)
 		
 	def format_wisper_received(self, client, message):
-		return "{}: <wisper> {}".format(client.getUserName(), message)
+		return "{}: <whisper> {}".format(client.getUserName(), message)
 	
 	def get_err_msg(self, expected, actual, msg = ""):
 		return "Expected {}; Actual {}. {}".format(expected, actual, msg)
@@ -116,10 +112,10 @@ class TestSnek(unittest.TestCase):
 		
 		actual = client0.getMsgLastReceived()
 		expected = self.format_sent(client1, self.TEST_MESSAGE1)
-		self.assertEqual(expected, actual, self.get_err_msg(expected, actual, "Expected mismatch"))
 		
 		#after test
 		self.after_test(clients)
+		self.assertFalse(expected == actual, self.get_err_msg(expected, actual, "Expected mismatch"))
 		
 	def test_message_after_disconnect(self):
 		header = "#===================== Message After Disconnect ====================="
@@ -132,18 +128,20 @@ class TestSnek(unittest.TestCase):
 		self.clients_login(clients)
 		
 		#test
-		self.clients_disconnect([client1])
-		actual = client1.getMsgLastReceived()
+		client1.send(self.DISCONNECT_MESSAGE)
+		time.sleep(0.1)
 		
 		client0.send(self.TEST_MESSAGE2)
 		time.sleep(0.1)
+		
+		actual = client1.getMsgLastReceived()
 		expected = self.format_sent(client0, self.TEST_MESSAGE2)
-		self.assertEqual(expected, actual, self.get_err_msg(expected, actual, "Expected mismatch"))
 		
 		#after test
 		self.after_test(clients)
+		self.assertFalse(expected == actual, self.get_err_msg(expected, actual, "Expected mismatch"))
 		
-	def test_message_wisper(self):
+	def test_message_whisper(self):
 		header = "#===================== Message Wisper ====================="
 		print(header)
 		#before test
@@ -157,17 +155,19 @@ class TestSnek(unittest.TestCase):
 		
 		#test
 		client0.send(self.format_wisper_sent(client1, self.TEST_MESSAGE1))
-		time.sleep(0.1)
+		time.sleep(1)
 		
-		actual = client2.getMsgLastReceived()
-		expected = client1.getMsgLastReceived()
-		self.assertEqual(expected, actual, self.get_err_msg(expected, actual, "Expected mismatch"))
+		actual0 = client2.getMsgLastReceived()
+		expected0 = client1.getMsgLastReceived()
 		
-		actual = client1.getMsgLastReceived()
-		expected = self.format_wisper_received(client1, self.TEST_MESSAGE1)
-		self.assertEqual(expected, actual, self.get_err_msg(expected, actual))
+		actual1 = client1.getMsgLastReceived()
+		expected1 = self.format_wisper_received(client0, self.TEST_MESSAGE1)
+		
 		#after test
 		self.after_test(clients)
+		
+		self.assertFalse(expected0 == actual0, self.get_err_msg(expected0, actual0, "Expected mismatch"))
+		self.assertEqual(expected1, actual1, self.get_err_msg(expected1, actual1))
 		
 	def test_invalid_usernames(self):
 		header = "#===================== Invalid Usernames ====================="
@@ -178,17 +178,21 @@ class TestSnek(unittest.TestCase):
 		client2 = self.make_client(self.client_args_invalid3)
 		clients = (client0, client1, client2)
 		
-		self.assertEqual(client0.getMsgLastReceived(), self.ERROR_IVALID_USERNAME)
-		self.assertFalse(client0.is_open)
-		
-		self.assertEqual(client1.getMsgLastReceived(), self.ERROR_IVALID_USERNAME)
-		self.assertFalse(client1.is_open)
-		
-		self.assertEqual(client2.getMsgLastReceived(), self.ERROR_IVALID_USERNAME)
-		self.assertFalse(client2.is_open)
+		actual0 = client0.getMsgLastReceived()
+		actual1 = client1.getMsgLastReceived()
+		actual2 = client2.getMsgLastReceived()
 		
 		#after test
-		self.after_test(clients)
+		self.after_test(clients)	
+		
+		self.assertEqual(actual0, self.ERROR_IVALID_USERNAME)
+		self.assertFalse(client0.is_open)
+		
+		self.assertEqual(actual1, self.ERROR_IVALID_USERNAME)
+		self.assertFalse(client1.is_open)
+		
+		self.assertEqual(actual2, self.ERROR_IVALID_USERNAME)
+		self.assertFalse(client2.is_open)
 		
 if __name__== '__main__':
     unittest.main()	

@@ -53,7 +53,7 @@ class SnekServer():
 				err = "{} disconnected".format(self.user)
 				del self.users[self.user]
 				self.msgSend(self.msgMake(err, self.SERVER_NAME), self.connections)
-				
+			
 			self.connections.remove(self.transport)
 
 		def data_received(self, data):
