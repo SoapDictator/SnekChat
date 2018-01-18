@@ -13,10 +13,12 @@ class SnekClient():
 
 		print(ascii_snek)
 
-	def start_client(self, args):
-		loop = asyncio.get_event_loop()
-		self.userClient = self.ChatClientProtocol(loop, args["user"])
-		coro = loop.create_connection(lambda: self.userClient, args["addr"], args["port"])
+	def start_client(self,  *args, **kwargs):
+		loop = asyncio.new_event_loop()
+		asyncio.set_event_loop(loop)
+		
+		self.userClient = self.ChatClientProtocol(loop, kwargs["user"])
+		coro = loop.create_connection(lambda: self.userClient, kwargs["addr"], kwargs["port"])
 		server = loop.run_until_complete(coro)
 		
 		asyncio.async(self.userClient.msgGet(loop))
@@ -43,7 +45,7 @@ class SnekClient():
 		def connection_lost(self, exc):
 			self.is_open = False
 			self.loop.stop()
-			sys.exit()
+			quit()
 
 		def data_received(self, data):
 			while not hasattr(self, "output"): #Wait until output is established
@@ -74,10 +76,13 @@ class SnekClient():
 		def output(self, data):
 			stdout.write(data)
 			
-		def getMsgLastReceived():
+		def getUserName(self):
+			return self.user
+			
+		def getMsgLastReceived(self):
 			return self.last_message_received
 			
-		def getMsgLastSent():
+		def getMsgLastSent(self):
 			return self.last_message_sent
 
 if __name__ == "__main__":
@@ -88,4 +93,4 @@ if __name__ == "__main__":
 	args = vars(parser.parse_args())
 	
 	client = SnekClient()
-	client.start_client(args)
+	client.start_client(**args)

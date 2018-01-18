@@ -16,9 +16,11 @@ class SnekServer():
 
 		print(ascii_snek)
 		
-	def start_server(self, args):
-		loop = asyncio.get_event_loop()
-		coro = loop.create_server(lambda: self.ChatServerProtocol(self.connections, self.users), args["addr"], args["port"])
+	def start_server(self, *args, **kwargs):
+		loop = asyncio.new_event_loop()
+		asyncio.set_event_loop(loop)
+
+		coro = loop.create_server(lambda: self.ChatServerProtocol(self.connections, self.users), kwargs["addr"], kwargs["port"])
 		server = loop.run_until_complete(coro)
 		
 		print('Serving on {}:{}'.format(*server.sockets[0].getsockname()))
@@ -46,16 +48,14 @@ class SnekServer():
 			self.peername = transport.get_extra_info('sockname')
 			self.transport = transport
 
-		def connection_lost(self, exc):
-			if isinstance(exc, ConnectionResetError):
-				self.connections.remove(self.transport)
-			else:
-				print(exc)
-			err = "{}:{} disconnected".format(*self.peername)
+		def connection_lost(self, exc):				
+			err = "{} disconnected".format(self.user)
 			message = self.msgMake(err, self.SERVER_NAME)
 
 			for connection in self.connections:
 				connection.write(message)
+				
+			self.connections.remove(self.transport)
 
 		def data_received(self, data):
 			if data:
@@ -64,9 +64,12 @@ class SnekServer():
 					if not user.isalpha():
 						self.transport.write(self.msgMake("Your name must be alphanumeric!", self.SERVER_NAME))
 						self.transport.close()
+					elif user in self.users.keys():
+						self.transport.write(self.msgMake("There is already a user with that nickname connected!", self.SERVER_NAME))
+						self.transport.close()
 					else:
 						self.user = data.decode()
-						msg = '{} connected ({}:{})'.format(self.user, *self.peername)
+						msg = '{} connected'.format(self.user)
 						self.transport.write(self.msgMake(msg, self.SERVER_NAME))
 						
 				else:
@@ -94,7 +97,7 @@ class SnekServer():
 				self.transport.close()
 				
 				self.message = ""
-				return self.connections
+				return None
 				
 			elif "/w" in message:
 				wispered_user = message.split(" ")[1]
@@ -132,4 +135,4 @@ if __name__ == "__main__":
 	args = vars(parser.parse_args())
 	
 	server = SnekServer()
-	server.start_server(args)
+	server.start_server(**args)
