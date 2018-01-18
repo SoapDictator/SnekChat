@@ -1,8 +1,8 @@
-import pytest, threading, time
+import pytest, threading, time, unittest
 from chat_server.server import *
 from chat_client.client import *
 
-class SnekTest():
+class TestSnek(unittest.TestCase):
 	ADDRESS = "127.0.0.1"
 	PORT = 50000
 	LOGIN_MESSAGE = "/login"
@@ -10,44 +10,28 @@ class SnekTest():
 	TEST_MESSAGE1 = "hi"
 	TEST_MESSAGE2 = "nope"
 	ERROR_IVALID_USERNAME = "[Server]: Your name must be alphanumeric!"
-
-	def __init__(self):
-		self.test_before_suite()
-		
-		#TESTS
-		self.test_invalid_usernames()
-		self.test_valid_message()
-		self.test_message_after_disconnect()
-		self.test_message_before_login()
-		self.test_message_wisper()
-		
-		self.test_after_suite()
-		
-	def test_before_suite(self):
-		valid_connection = dict()
-		valid_connection["addr"] = self.ADDRESS
-		valid_connection["port"] = self.PORT
-		
-		self.client_args_valid1 = valid_connection.copy()
-		self.client_args_valid1["user"] = "ValidOne"
-		
-		self.client_args_valid2 = valid_connection.copy()
-		self.client_args_valid2["user"] = "ValidTwo"
-		
-		self.client_args_valid3 = valid_connection.copy()
-		self.client_args_valid3["user"] = "ValidThree"
-		
-		self.client_args_invalid1 = valid_connection.copy()
-		self.client_args_invalid1["user"] = "_InvalidOne_"
-		
-		self.client_args_invalid2 = valid_connection.copy()
-		self.client_args_invalid2["user"] = "Invalid1"
-		
-		self.client_args_invalid3 = valid_connection.copy()
-		self.client_args_invalid3["user"] = "!#@^;:-"
-		
-	def test_after_suite(self):
-		quit()
+	
+	valid_connection = dict()
+	valid_connection["addr"] = ADDRESS
+	valid_connection["port"] = PORT
+	
+	client_args_valid1 = valid_connection.copy()
+	client_args_valid1["user"] = "ValidOne"
+	
+	client_args_valid2 = valid_connection.copy()
+	client_args_valid2["user"] = "ValidTwo"
+	
+	client_args_valid3 = valid_connection.copy()
+	client_args_valid3["user"] = "ValidThree"
+	
+	client_args_invalid1 = valid_connection.copy()
+	client_args_invalid1["user"] = "_InvalidOne_"
+	
+	client_args_invalid2 = valid_connection.copy()
+	client_args_invalid2["user"] = "Invalid1"
+	
+	client_args_invalid3 = valid_connection.copy()
+	client_args_invalid3["user"] = "!#@^;:-"
 		
 	def before_test(self):
 		client1 = self.make_client(self.client_args_valid1)
@@ -77,12 +61,12 @@ class SnekTest():
 	def clients_login(self, clients):
 		for client in clients:
 			client.send(self.LOGIN_MESSAGE)
-		time.sleep(0.1)
+		time.sleep(1)
 	
 	def clients_disconnect(self, clients):
 		for client in clients:
 			client.send(self.DISCONNECT_MESSAGE)
-		time.sleep(0.1)
+		time.sleep(1)
 	
 	def format_sent(self, client, message):
 		return "{}: {}".format(client.getUserName(), message)
@@ -114,7 +98,7 @@ class SnekTest():
 		
 		actual = client1.getMsgLastReceived()
 		expected = self.format_sent(client0, self.TEST_MESSAGE1)
-		assert expected == actual, self.get_err_msg(expected, actual)
+		self.assertEqual(expected, actual, self.get_err_msg(expected, actual))
 		
 		#after test
 		self.after_test(clients)
@@ -132,7 +116,7 @@ class SnekTest():
 		
 		actual = client0.getMsgLastReceived()
 		expected = self.format_sent(client1, self.TEST_MESSAGE1)
-		assert expected != actual, self.get_err_msg(expected, actual, "Expected mismatch")
+		self.assertEqual(expected, actual, self.get_err_msg(expected, actual, "Expected mismatch"))
 		
 		#after test
 		self.after_test(clients)
@@ -154,7 +138,7 @@ class SnekTest():
 		client0.send(self.TEST_MESSAGE2)
 		time.sleep(0.1)
 		expected = self.format_sent(client0, self.TEST_MESSAGE2)
-		assert expected != actual, self.get_err_msg(expected, actual, "Expected mismatch")
+		self.assertEqual(expected, actual, self.get_err_msg(expected, actual, "Expected mismatch"))
 		
 		#after test
 		self.after_test(clients)
@@ -177,11 +161,11 @@ class SnekTest():
 		
 		actual = client2.getMsgLastReceived()
 		expected = client1.getMsgLastReceived()
-		assert expected != actual, self.get_err_msg(expected, actual, "Expected mismatch")
+		self.assertEqual(expected, actual, self.get_err_msg(expected, actual, "Expected mismatch"))
 		
 		actual = client1.getMsgLastReceived()
 		expected = self.format_wisper_received(client1, self.TEST_MESSAGE1)
-		assert expected != actual, self.get_err_msg(expected, actual)
+		self.assertEqual(expected, actual, self.get_err_msg(expected, actual))
 		#after test
 		self.after_test(clients)
 		
@@ -194,16 +178,17 @@ class SnekTest():
 		client2 = self.make_client(self.client_args_invalid3)
 		clients = (client0, client1, client2)
 		
-		assert client0.getMsgLastReceived() == self.ERROR_IVALID_USERNAME
-		assert client0.is_open == False
+		self.assertEqual(client0.getMsgLastReceived(), self.ERROR_IVALID_USERNAME)
+		self.assertFalse(client0.is_open)
 		
-		assert client1.getMsgLastReceived() == self.ERROR_IVALID_USERNAME
-		assert client1.is_open == False
+		self.assertEqual(client1.getMsgLastReceived(), self.ERROR_IVALID_USERNAME)
+		self.assertFalse(client1.is_open)
 		
-		assert client2.getMsgLastReceived() == self.ERROR_IVALID_USERNAME
-		assert client2.is_open == False
+		self.assertEqual(client2.getMsgLastReceived(), self.ERROR_IVALID_USERNAME)
+		self.assertFalse(client2.is_open)
 		
 		#after test
-		self.clients_login(clients)
+		self.after_test(clients)
 		
-start = SnekTest()
+if __name__== '__main__':
+    unittest.main()	
