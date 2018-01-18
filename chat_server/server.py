@@ -48,12 +48,13 @@ class SnekServer():
 			self.peername = transport.get_extra_info('sockname')
 			self.transport = transport
 
-		def connection_lost(self, exc):				
-			err = "{} disconnected".format(self.user)
-			
-			del self.users[self.user]
+		def connection_lost(self, exc):
+			if self.user != None:
+				err = "{} disconnected".format(self.user)
+				del self.users[self.user]
+				self.msgSend(self.msgMake(err, self.SERVER_NAME), self.connections)
+				
 			self.connections.remove(self.transport)
-			self.msgSend(self.msgMake(err, self.SERVER_NAME), self.connections)
 
 		def data_received(self, data):
 			if data:
@@ -66,7 +67,8 @@ class SnekServer():
 						self.transport.write(self.msgMake("There is already a user with that nickname connected!", self.SERVER_NAME))
 						self.transport.close()
 					else:
-						self.user = data.decode()
+						self.user = user
+						self.users[self.user] = self.transport
 						msg = '{} connected'.format(self.user)
 						self.transport.write(self.msgMake(msg, self.SERVER_NAME))
 						
@@ -86,7 +88,6 @@ class SnekServer():
 			
 			if "/login" in message:
 				self.is_loggined = True
-				self.users[self.user] = self.transport
 				
 				self.message = ""
 				return self.connections
@@ -102,9 +103,10 @@ class SnekServer():
 				if wispered_user in self.users:
 					whispered_connection = self.users[wispered_user]
 					
-					self.message = message.strip("/w "+wispered_user+" ")
+					self.message = message.lstrip("/w "+wispered_user+" ")
 					self.message = "<whisper> " + self.message
 					return [whispered_connection]
+				return self.connections
 					
 			else:
 				self.message = message
