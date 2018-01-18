@@ -2,7 +2,8 @@ import asyncio, json, argparse, sys
 from sys import stdout
 
 class SnekClient():
-	def __init__(self):
+	def __init__(self, isTested = False):
+		self.isTested = isTested
 		ascii_snek = """\
         --..,_                     _,.--.
            `'.'.                .'`__ o  `;__.
@@ -21,20 +22,22 @@ class SnekClient():
 		coro = loop.create_connection(lambda: self.userClient, kwargs["addr"], kwargs["port"])
 		server = loop.run_until_complete(coro)
 		
-		asyncio.async(self.userClient.msgGet(loop))
+		if not self.isTested:
+			asyncio.ensure_future(self.userClient.msgGet(loop))
+		
 		loop.run_forever()
-		loop.close()
 		
 	def getUserClient(self):
 		return self.userClient
 		
 	class ChatClientProtocol(asyncio.Protocol):
-		def __init__(self, loop, user, **kwargs):
+		last_message_sent = ""
+		last_message_received = ""
+		
+		def __init__(self, loop, user):
 			self.user = user
 			self.is_open = False
 			self.loop = loop
-			self.last_message_sent = ""
-			self.last_message_received = ""
 			
 		def connection_made(self, transport):
 			self.sockname = transport.get_extra_info("sockname")
@@ -43,9 +46,10 @@ class SnekClient():
 			self.is_open = True
 			
 		def connection_lost(self, exc):
-			quit()
 			self.is_open = False
+			self.transport.close()
 			self.loop.stop()
+			quit()
 
 		def data_received(self, data):
 			while not hasattr(self, "output"): #Wait until output is established
@@ -69,7 +73,7 @@ class SnekClient():
 				self.transport.write(data.encode())
 				
 		async def msgGet(self, loop):
-			while True:
+			while self.is_open:
 				msg = await loop.run_in_executor(None, input) #Get stdout input forever
 				self.send(msg)
 
