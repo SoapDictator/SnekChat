@@ -43,9 +43,9 @@ class SnekClient():
 			self.is_open = True
 			
 		def connection_lost(self, exc):
+			quit()
 			self.is_open = False
 			self.loop.stop()
-			quit()
 
 		def data_received(self, data):
 			while not hasattr(self, "output"): #Wait until output is established

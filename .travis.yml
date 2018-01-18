@@ -7,3 +7,4 @@ script:
   - python ./chat_server/server.py&
   - sleep 1
   - python ./test.py
+  - killall python

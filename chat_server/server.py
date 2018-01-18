@@ -50,12 +50,9 @@ class SnekServer():
 
 		def connection_lost(self, exc):				
 			err = "{} disconnected".format(self.user)
-			message = self.msgMake(err, self.SERVER_NAME)
-
-			for connection in self.connections:
-				connection.write(message)
-				
+			
 			self.connections.remove(self.transport)
+			self.msgSend(self.msgMake(err, self.SERVER_NAME), self.connections)
 
 		def data_received(self, data):
 			if data:
@@ -97,7 +94,7 @@ class SnekServer():
 				self.transport.close()
 				
 				self.message = ""
-				return None
+				return self.connections
 				
 			elif "/w" in message:
 				wispered_user = message.split(" ")[1]

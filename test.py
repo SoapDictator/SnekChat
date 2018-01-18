@@ -40,9 +40,17 @@ class SnekTest():
 		
 		return client1.getUserClient(), client2.getUserClient()
 		
-	def after_test(self):
-		for thread in threading.enumerate():
-			thread.join()
+	def after_test(self, clients):
+		try:
+			for client in clients:
+				client.send(self.DISCONNECT_MESSAGE)
+			time.sleep(1)
+			
+			for thread in threading.enumerate():
+				if thread._name != "MainThread":
+					thread.join()
+		except:
+			pass
 			
 	def get_err_msg(self, expected, actual):
 		return "Expected {}; Actual {}".format(expected, actual)
@@ -53,7 +61,6 @@ class SnekTest():
 		client1, client2 = self.before_test()
 		
 		client1.send(self.LOGIN_MESSAGE)
-		time.sleep(0.1)
 		client2.send(self.LOGIN_MESSAGE)
 		time.sleep(0.1)
 		
@@ -65,11 +72,6 @@ class SnekTest():
 		assert expected == actual, self.get_err_msg(expected, actual)
 		
 		#after test
-		client1.send(self.DISCONNECT_MESSAGE)
-		time.sleep(1)
-		client2.send(self.DISCONNECT_MESSAGE)
-		time.sleep(1)
-		
-		self.after_test()
+		self.after_test([client1, client2])
 		
 start = SnekTest()
